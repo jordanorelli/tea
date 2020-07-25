@@ -10,21 +10,18 @@ type step struct {
 }
 
 func (s *step) run(t *testing.T) {
-	if s.skip {
+	name := ""
+	for s := s; s != nil; s = s.next {
+		name += s.name
 		if s.next != nil {
-			s.next.skip = true
-			t.Run(s.next.name, s.next.run)
+			name += "/"
 		}
-		t.SkipNow()
 	}
-
-	s.Test.Run(t)
-	if s.next != nil {
-		if t.Failed() || t.Skipped() {
-			s.next.skip = true
+	t.Run(name, func(t *testing.T) {
+		for s := s; s != nil; s = s.next {
+			s.Test.Run(t)
 		}
-		t.Run(s.next.name, s.next.run)
-	}
+	})
 }
 
 func (t *Tree) plan() []step {

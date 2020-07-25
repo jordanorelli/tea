@@ -1,7 +1,6 @@
 package tea
 
 import (
-	// "reflect"
 	"testing"
 )
 
@@ -9,7 +8,7 @@ import (
 func Run(t *testing.T, tree *Tree) {
 	plan := tree.plan()
 	for _, step := range plan {
-		t.Run(step.name, step.run)
+		step.run(t)
 	}
 }
 
@@ -39,8 +38,4 @@ func parseName(test Test) string {
 		return s.String()
 	}
 	return "???"
-	// T := reflect.TypeOf(test)
-	// for i := 0; i < T.NumField(); i++ {
-	// 	field := T.Field(i)
-	// }
 }
