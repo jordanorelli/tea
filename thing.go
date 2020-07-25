@@ -12,6 +12,9 @@ var (
 )
 
 func validateKey(key string) error {
+	if strings.TrimSpace(key) == "" {
+		return fmt.Errorf("%w: key cannot be empty string", ErrInvalidKey)
+	}
 	if strings.Count(key, " ") > 0 {
 		return fmt.Errorf("%w: key cannot contain spaces", ErrInvalidKey)
 	}

@@ -16,7 +16,7 @@ type testThingSetup struct {
 func (test *testThingSetup) Run(t *testing.T) {
 	t.Logf("[%s] running testThingSetup", t.Name())
 	if test.thing != nil {
-		// t.Fatal("should be nil")
+		t.Fatal("should be nil")
 	}
 	test.thing = new(Thing)
 }
@@ -49,24 +49,18 @@ func (test *setKey) Run(t *testing.T) {
 func TestThing(t *testing.T) {
 	root := tea.New(new(testThingSetup))
 
-	{
-		root.Child(&setKey{key: "alice", value: "apple"})
-		root.Child(&setKey{key: "bob", value: "banana"})
-		root.Child(&setKey{key: "carol", value: "cherry"})
-	}
+	root.Child(&setKey{key: "alice", value: "apple"})
+	root.Child(&setKey{key: "bob", value: "banana"})
+	root.Child(&setKey{key: "carol", value: "cherry"})
 
-	{
-		bob := root.Child(&setKey{key: "b ob", value: "banana"})
-		bob.Child(&setKey{key: "car-el", value: "cherry"})
-		dave := bob.Child(&setKey{key: "dave", value: "durian"})
-		dave.Child(&setKey{key: "evan", value: "elderberry"})
-	}
+	bob := root.Child(&setKey{key: "b ob", value: "banana"})
+	bob.Child(&setKey{key: "car-el", value: "cherry"})
+	dave := bob.Child(&setKey{key: "dave", value: "durian"})
+	dave.Child(&setKey{key: "evan", value: "elderberry"})
 
-	{
-		root.Child(&setKey{key: "al ice", bad: true})
-		root.Child(&setKey{key: " alice", bad: true})
-		root.Child(&setKey{key: "alice ", bad: true})
-	}
+	root.Child(&setKey{key: "al ice", bad: true})
+	root.Child(&setKey{key: " alice", bad: true})
+	root.Child(&setKey{key: "alice ", bad: true})
 
 	tea.Run(t, root)
 }

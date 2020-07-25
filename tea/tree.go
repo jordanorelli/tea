@@ -1,7 +1,7 @@
 package tea
 
 import (
-	// "reflect"
+	"reflect"
 	"testing"
 )
 
@@ -10,7 +10,7 @@ func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
 		setup(t, tree)
 
-		tree.test.Run(t)
+		clone(tree.test).Run(t)
 
 		for _, child := range tree.children {
 			if t.Failed() || t.Skipped() {
@@ -25,7 +25,7 @@ func Run(t *testing.T, tree *Tree) {
 func setup(t *testing.T, tree *Tree) {
 	if tree.parent != nil {
 		setup(t, tree.parent)
-		tree.parent.test.Run(t)
+		clone(tree.parent.test).Run(t)
 	}
 }
 
@@ -59,12 +59,12 @@ func (t *Tree) Child(test Test) *Tree {
 	return child
 }
 
-// func clone(t Test) Test {
-// 	T := reflect.TypeOf(t)
-// 	switch T.Kind() {
-// 	case reflect.Struct:
-// 	}
-// }
+func clone(t Test) Test {
+	srcV := reflect.ValueOf(t).Elem()
+	destV := reflect.New(srcV.Type())
+	destV.Elem().Set(srcV)
+	return destV.Interface().(Test)
+}
 
 func parseName(test Test) string {
 	if s, ok := test.(interface{ String() string }); ok {
