@@ -10,20 +10,21 @@ import (
 )
 
 type testThingSetup struct {
-	thing *Thing
+	Thing *Thing `tea:"save"`
 }
 
 func (test *testThingSetup) Run(t *testing.T) {
 	t.Logf("[%s] running testThingSetup", t.Name())
-	if test.thing != nil {
+	if test.Thing != nil {
 		t.Fatal("should be nil")
 	}
-	test.thing = new(Thing)
+	test.Thing = new(Thing)
 }
 
 func (test testThingSetup) String() string { return "thingSetup" }
 
 type setKey struct {
+	Thing *Thing `tea:"load"`
 	key   string
 	value string
 	bad   bool
@@ -35,9 +36,8 @@ func (test setKey) String() string {
 
 func (test *setKey) Run(t *testing.T) {
 	t.Logf("[%s] running setKey key: %q value: %q", t.Name(), test.key, test.value)
-	thing := new(Thing)
 
-	err := thing.Set(test.key, test.value)
+	err := test.Thing.Set(test.key, test.value)
 	if !test.bad && err != nil {
 		t.Errorf("should be able to set %q=%q but saw error %v", test.key, test.value, err)
 	}
