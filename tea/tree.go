@@ -1,59 +1,52 @@
 package tea
 
 import (
+	// "reflect"
 	"testing"
 )
 
 // Run runs a tree of tests, starting from its root.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
-		var setup []Test
+		setup(t, tree)
 
-		for root := tree; root.parent != nil; root = root.parent {
-			setup = append(setup, root.parent.Test)
-		}
-
-		for i, j := 0, len(setup)-1; i < j; i, j = i+1, j-1 {
-			setup[i], setup[j] = setup[j], setup[i]
-		}
-
-		for _, test := range setup {
-			test.Run(t)
-		}
-
-		tree.Test.Run(t)
-
-		if t.Failed() || t.Skipped() {
-			for _, child := range tree.children {
-				skip(t, child)
-			}
-			return
-		}
+		tree.test.Run(t)
 
 		for _, child := range tree.children {
-			Run(t, child)
+			if t.Failed() || t.Skipped() {
+				skip(t, child)
+			} else {
+				Run(t, child)
+			}
 		}
 	})
 }
 
+func setup(t *testing.T, tree *Tree) {
+	if tree.parent != nil {
+		setup(t, tree.parent)
+		tree.parent.test.Run(t)
+	}
+}
+
 func skip(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
-		t.Skip("tea skipped: dependency failed")
 		for _, child := range tree.children {
 			skip(t, child)
 		}
+		t.Skip("tea skipped: dependency failed")
 	})
 }
 
 func New(test Test) *Tree {
 	return &Tree{
-		Test: test,
+		test: test,
 		name: parseName(test),
 	}
 }
 
 type Tree struct {
-	Test
+	test     Test
 	name     string
 	parent   *Tree
 	children []*Tree
@@ -65,6 +58,13 @@ func (t *Tree) Child(test Test) *Tree {
 	t.children = append(t.children, child)
 	return child
 }
+
+// func clone(t Test) Test {
+// 	T := reflect.TypeOf(t)
+// 	switch T.Kind() {
+// 	case reflect.Struct:
+// 	}
+// }
 
 func parseName(test Test) string {
 	if s, ok := test.(interface{ String() string }); ok {

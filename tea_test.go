@@ -15,6 +15,9 @@ type testThingSetup struct {
 
 func (test *testThingSetup) Run(t *testing.T) {
 	t.Logf("[%s] running testThingSetup", t.Name())
+	if test.thing != nil {
+		// t.Fatal("should be nil")
+	}
 	test.thing = new(Thing)
 }
 
@@ -55,7 +58,8 @@ func TestThing(t *testing.T) {
 	{
 		bob := root.Child(&setKey{key: "b ob", value: "banana"})
 		bob.Child(&setKey{key: "car-el", value: "cherry"})
-		bob.Child(&setKey{key: "dave", value: "durian"})
+		dave := bob.Child(&setKey{key: "dave", value: "durian"})
+		dave.Child(&setKey{key: "evan", value: "elderberry"})
 	}
 
 	{
