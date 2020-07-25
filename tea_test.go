@@ -14,7 +14,6 @@ type testThingSetup struct {
 }
 
 func (test *testThingSetup) Run(t *testing.T) {
-	t.Log("Running testThingSetup")
 	test.thing = new(Thing)
 }
 
@@ -27,11 +26,10 @@ type setKey struct {
 }
 
 func (test setKey) String() string {
-	return fmt.Sprintf("setKey(%q=%q)", test.key, test.value)
+	return fmt.Sprintf("setKey:%s", test.key)
 }
 
 func (test *setKey) Run(t *testing.T) {
-	t.Logf("Running setKey key: %q value: %q bad?: %t", test.key, test.value, test.bad)
 	thing := new(Thing)
 
 	err := thing.Set(test.key, test.value)
@@ -45,9 +43,24 @@ func (test *setKey) Run(t *testing.T) {
 
 func TestThing(t *testing.T) {
 	root := tea.New(new(testThingSetup))
-	root.Child(&setKey{key: "alice", value: "apple"})
-	bob := root.Child(&setKey{key: "bob", value: "banana"})
-	bob.Child(&setKey{key: "car-el", value: "candy"})
-	root.Child(&setKey{key: "d' oh", bad: true})
+
+	{
+		root.Child(&setKey{key: "alice", value: "apple"})
+		root.Child(&setKey{key: "bob", value: "banana"})
+		root.Child(&setKey{key: "carol", value: "cherry"})
+	}
+
+	{
+		test := root.Child(&setKey{key: "b ob", value: "banana"})
+		test = test.Child(&setKey{key: "car-el", value: "cherry"})
+		test = test.Child(&setKey{key: "dave", value: "durian"})
+	}
+
+	{
+		root.Child(&setKey{key: "al ice", bad: true})
+		root.Child(&setKey{key: " alice", bad: true})
+		root.Child(&setKey{key: "alice ", bad: true})
+	}
+
 	tea.Run(t, root)
 }
