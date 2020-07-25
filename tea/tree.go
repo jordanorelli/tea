@@ -7,6 +7,20 @@ import (
 // Run runs a tree of tests, starting from its root.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
+		var setup []Test
+
+		for root := tree; root.parent != nil; root = root.parent {
+			setup = append(setup, root.parent.Test)
+		}
+
+		for i, j := 0, len(setup)-1; i < j; i, j = i+1, j-1 {
+			setup[i], setup[j] = setup[j], setup[i]
+		}
+
+		for _, test := range setup {
+			test.Run(t)
+		}
+
 		tree.Test.Run(t)
 
 		if t.Failed() || t.Skipped() {
@@ -17,7 +31,6 @@ func Run(t *testing.T, tree *Tree) {
 		}
 
 		for _, child := range tree.children {
-			tree.Test.Run(t)
 			Run(t, child)
 		}
 	})

@@ -14,6 +14,7 @@ type testThingSetup struct {
 }
 
 func (test *testThingSetup) Run(t *testing.T) {
+	t.Logf("[%s] running testThingSetup", t.Name())
 	test.thing = new(Thing)
 }
 
@@ -30,6 +31,7 @@ func (test setKey) String() string {
 }
 
 func (test *setKey) Run(t *testing.T) {
+	t.Logf("[%s] running setKey key: %q value: %q", t.Name(), test.key, test.value)
 	thing := new(Thing)
 
 	err := thing.Set(test.key, test.value)
