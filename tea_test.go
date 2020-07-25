@@ -51,9 +51,9 @@ func TestThing(t *testing.T) {
 	}
 
 	{
-		test := root.Child(&setKey{key: "b ob", value: "banana"})
-		test = test.Child(&setKey{key: "car-el", value: "cherry"})
-		test = test.Child(&setKey{key: "dave", value: "durian"})
+		bob := root.Child(&setKey{key: "b ob", value: "banana"})
+		bob.Child(&setKey{key: "car-el", value: "cherry"})
+		bob.Child(&setKey{key: "dave", value: "durian"})
 	}
 
 	{
