@@ -9,6 +9,10 @@ import (
 	"./tea"
 )
 
+type empty struct{}
+
+func (e *empty) Run(t *testing.T) {}
+
 type testThingSetup struct {
 	Thing *Thing `tea:"save"`
 }
@@ -37,6 +41,7 @@ func (test setKey) String() string {
 func (test *setKey) Run(t *testing.T) {
 	t.Logf("[%s] running setKey key: %q value: %q", t.Name(), test.key, test.value)
 
+	// test.Thing is automatically propagated from the prior test by tea!
 	err := test.Thing.Set(test.key, test.value)
 	if !test.bad && err != nil {
 		t.Errorf("should be able to set %q=%q but saw error %v", test.key, test.value, err)
@@ -51,7 +56,8 @@ func TestThing(t *testing.T) {
 
 	root.Child(&setKey{key: "alice", value: "apple"})
 	root.Child(&setKey{key: "bob", value: "banana"})
-	root.Child(&setKey{key: "carol", value: "cherry"})
+	root.Child(new(empty)).Child(&setKey{key: "carol", value: "cherry"})
+	root.Child(&setKey{bad: true})
 
 	bob := root.Child(&setKey{key: "b ob", value: "banana"})
 	bob.Child(&setKey{key: "car-el", value: "cherry"})

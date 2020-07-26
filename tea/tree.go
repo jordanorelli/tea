@@ -6,31 +6,62 @@ import (
 	"testing"
 )
 
-// Run runs a tree of tests, starting from its root.
+// Run runs a tree of tests. Tests will be run recursively starting at the
+// provided node and descending to all of its children. All of its parent nodes
+// will also be run since they are prerequisites, but none of its sibling node
+// will be executed.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
-		test := setup(t, tree)
-		test.Run(t)
+		setup(t, tree)
+
+		if t.Failed() || t.Skipped() {
+			for _, child := range tree.children {
+				skip(t, child)
+			}
+			return
+		}
 
 		for _, child := range tree.children {
-			if t.Failed() || t.Skipped() {
-				skip(t, child)
-			} else {
-				Run(t, child)
-			}
+			Run(t, child)
 		}
 	})
 }
 
-func setup(t *testing.T, tree *Tree) Test {
-	test := clone(tree.test)
-	if tree.parent != nil {
-		p := setup(t, tree.parent)
-		p.Run(t)
-		test = merge(test, p)
+// setup runs all of the tests ancestor to the given tree, building up a
+// testing environment from their side-effects
+func setup(t *testing.T, tree *Tree) *env {
+	if tree == nil {
+		return nil
 	}
-	return test
+
+	if tree.parent == nil {
+		test := clone(tree.test)
+		test.Run(t)
+		return mkenv(test)
+	}
+
+	e := setup(t, tree.parent)
+	test := clone(tree.test)
+	e.load(test)
+	test.Run(t)
+	return e.save(test)
 }
+
+// setup runs all of the dependencies for a given test. All of the tests are
+// run in the same subtest (and therefore same goroutine).
+// func setup(t *testing.T, tree *Tree) Test {
+// 	// clone the user's values before doing anything, we don't want to pollute
+// 	// the planning tree.
+// 	test := clone(tree.test)
+//
+// 	if tree.parent != nil {
+// 		p := setup(t, tree.parent)
+// 		p.Run(t)
+// 		test = merge(test, p)
+// 	}
+//
+// 	return test
+// }
 
 func skip(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
@@ -96,6 +127,10 @@ func merge(dest Test, src Test) Test {
 // isSaveField takes a struct field and checks its tags for a save tag,
 // indicating that the field's value should persist between tests
 func isSaveField(f reflect.StructField) bool {
+	// PkgPath is empty string when the identifier is unexported.
+	if f.PkgPath != "" {
+		return false
+	}
 	parts := strings.Split(f.Tag.Get("tea"), ",")
 	for _, part := range parts {
 		if part == "save" {
@@ -109,6 +144,10 @@ func isSaveField(f reflect.StructField) bool {
 // indicating that the field's value should be populated by a saved value from
 // a prior test in the chain.
 func isLoadField(f reflect.StructField) bool {
+	// PkgPath is empty string when the identifier is unexported.
+	if f.PkgPath != "" {
+		return false
+	}
 	parts := strings.Split(f.Tag.Get("tea"), ",")
 	for _, part := range parts {
 		if part == "load" {
@@ -118,6 +157,7 @@ func isLoadField(f reflect.StructField) bool {
 	return false
 }
 
+// parseName parses the name for a given test
 func parseName(test Test) string {
 	if s, ok := test.(interface{ String() string }); ok {
 		return s.String()

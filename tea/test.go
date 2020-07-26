@@ -18,3 +18,10 @@ type failure struct {
 }
 
 func (f failure) Run(t *testing.T) { t.Error(f.cause.Error()) }
+
+// empty is an empty test. It does nothing when run, it's just used as a
+// sentinel value to create notes in the test graph and for ... testing the tea
+// package itself.
+type empty struct{}
+
+func (e empty) Run(t *testing.T) {}
