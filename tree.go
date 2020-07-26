@@ -12,8 +12,12 @@ import (
 // will be executed.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
-		exec(t, tree)
-		after(t, tree)
+		history, _ := exec(t, tree)
+		for _, test := range history {
+			if a, ok := test.(After); ok {
+				a.After(t)
+			}
+		}
 
 		if t.Failed() || t.Skipped() {
 			for _, child := range tree.children {
@@ -30,31 +34,22 @@ func Run(t *testing.T, tree *Tree) {
 
 // exec runs the provided test and all of its ancestors in the provided testing
 // context. exec returns the environment produced by running these tests.
-func exec(t *testing.T, tree *Tree) *env {
+func exec(t *testing.T, tree *Tree) ([]Test, *env) {
 	if tree == nil {
-		return nil
+		return nil, nil
 	}
 
 	if tree.parent == nil {
 		test := clone(tree.test)
 		test.Run(t)
-		return mkenv(test)
+		return []Test{test}, mkenv(test)
 	}
 
-	e := exec(t, tree.parent)
+	history, e := exec(t, tree.parent)
 	test := clone(tree.test)
 	e.load(test)
 	test.Run(t)
-	return e.save(test)
-}
-
-func after(t *testing.T, tree *Tree) {
-	if a, ok := tree.test.(After); ok {
-		a.After(t)
-	}
-	if tree.parent != nil {
-		after(t, tree.parent)
-	}
+	return append([]Test{test}, history...), e.save(test)
 }
 
 // skip skips the provided tree node as well as all of its children.
