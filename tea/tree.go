@@ -12,7 +12,7 @@ import (
 // will be executed.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
-		setup(t, tree)
+		exec(t, tree)
 
 		if t.Failed() || t.Skipped() {
 			for _, child := range tree.children {
@@ -27,9 +27,9 @@ func Run(t *testing.T, tree *Tree) {
 	})
 }
 
-// setup runs all of the tests ancestor to the given tree, building up a
-// testing environment from their side-effects
-func setup(t *testing.T, tree *Tree) *env {
+// exec runs the provided test and all of its ancestors in the provided testing
+// context. exec returns the environment produced by running these tests.
+func exec(t *testing.T, tree *Tree) *env {
 	if tree == nil {
 		return nil
 	}
@@ -40,29 +40,14 @@ func setup(t *testing.T, tree *Tree) *env {
 		return mkenv(test)
 	}
 
-	e := setup(t, tree.parent)
+	e := exec(t, tree.parent)
 	test := clone(tree.test)
 	e.load(test)
 	test.Run(t)
 	return e.save(test)
 }
 
-// setup runs all of the dependencies for a given test. All of the tests are
-// run in the same subtest (and therefore same goroutine).
-// func setup(t *testing.T, tree *Tree) Test {
-// 	// clone the user's values before doing anything, we don't want to pollute
-// 	// the planning tree.
-// 	test := clone(tree.test)
-//
-// 	if tree.parent != nil {
-// 		p := setup(t, tree.parent)
-// 		p.Run(t)
-// 		test = merge(test, p)
-// 	}
-//
-// 	return test
-// }
-
+// skip skips the provided tree node as well as all of its children.
 func skip(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
 		for _, child := range tree.children {
@@ -72,6 +57,9 @@ func skip(t *testing.T, tree *Tree) {
 	})
 }
 
+// New creates a new testing Tree starting with a root test. Given this root
+// Tree node, consumers can add successive nodes to the tree as children of the
+// root.
 func New(test Test) *Tree {
 	return &Tree{
 		test: test,
@@ -79,6 +67,7 @@ func New(test Test) *Tree {
 	}
 }
 
+// Tree represents a node in a Tree of tests
 type Tree struct {
 	test     Test
 	name     string
@@ -86,6 +75,8 @@ type Tree struct {
 	children []*Tree
 }
 
+// Child creates a new Tree node as a child of the current tree node, returning
+// the newly created child node.
 func (t *Tree) Child(test Test) *Tree {
 	child := New(test)
 	child.parent = t
