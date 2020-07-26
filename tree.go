@@ -13,6 +13,7 @@ import (
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
 		exec(t, tree)
+		after(t, tree)
 
 		if t.Failed() || t.Skipped() {
 			for _, child := range tree.children {
@@ -45,6 +46,15 @@ func exec(t *testing.T, tree *Tree) *env {
 	e.load(test)
 	test.Run(t)
 	return e.save(test)
+}
+
+func after(t *testing.T, tree *Tree) {
+	if a, ok := tree.test.(After); ok {
+		a.After(t)
+	}
+	if tree.parent != nil {
+		after(t, tree.parent)
+	}
 }
 
 // skip skips the provided tree node as well as all of its children.

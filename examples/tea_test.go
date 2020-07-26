@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"./tea"
+	"github.com/jordanorelli/tea"
 )
 
 type empty struct{}
@@ -23,6 +23,10 @@ func (test *testThingSetup) Run(t *testing.T) {
 		t.Fatal("should be nil")
 	}
 	test.Thing = new(Thing)
+}
+
+func (test *testThingSetup) After(t *testing.T) {
+	t.Logf("[%s] testThingSetup after", t.Name())
 }
 
 func (test testThingSetup) String() string { return "thingSetup" }
@@ -49,6 +53,10 @@ func (test *setKey) Run(t *testing.T) {
 	if test.bad && err == nil {
 		t.Errorf("able to set bad values %q=%q", test.key, test.value)
 	}
+}
+
+func (test *setKey) After(t *testing.T) {
+	t.Logf("[%s] setKey after key: %q value: %q", t.Name(), test.key, test.value)
 }
 
 func TestThing(t *testing.T) {
