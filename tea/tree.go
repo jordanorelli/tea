@@ -93,28 +93,6 @@ func clone(t Test) Test {
 	return destV.Interface().(Test)
 }
 
-// merge merges into dest the fields on the src test that are marked as worth
-// saving
-func merge(dest Test, src Test) Test {
-	destV := reflect.ValueOf(dest).Elem()
-	srcV := reflect.ValueOf(src).Elem()
-
-	for i := 0; i < srcV.NumField(); i++ {
-		sf := srcV.Type().Field(i)
-		if isSaveField(sf) {
-			df, ok := destV.Type().FieldByName(sf.Name)
-			if ok && isLoadField(df) {
-				if sf.Type == df.Type {
-					sfv := srcV.FieldByName(sf.Name)
-					dfv := destV.FieldByName(sf.Name)
-					dfv.Set(sfv)
-				}
-			}
-		}
-	}
-	return dest
-}
-
 // isSaveField takes a struct field and checks its tags for a save tag,
 // indicating that the field's value should persist between tests
 func isSaveField(f reflect.StructField) bool {
