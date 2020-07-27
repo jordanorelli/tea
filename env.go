@@ -6,8 +6,7 @@ import (
 )
 
 type env struct {
-	key    string
-	value  interface{}
+	data   map[string]interface{}
 	parent *env
 }
 
@@ -17,7 +16,8 @@ func mkenv(test Test) *env {
 }
 
 // save looks at the Test t and saves the values of its fields marked with a
-// save tag
+// save tag. All of the fields for that tests are stored together as a data
+// layer.
 func (e *env) save(test Test) *env {
 	V := reflect.ValueOf(test)
 	if V.Type().Kind() == reflect.Ptr {
@@ -25,6 +25,7 @@ func (e *env) save(test Test) *env {
 	}
 	T := V.Type()
 
+	saved := make(map[string]interface{})
 	for i := 0; i < T.NumField(); i++ {
 		f := T.Field(i)
 		if !isSaveField(f) {
@@ -32,9 +33,11 @@ func (e *env) save(test Test) *env {
 		}
 
 		fv := V.Field(i)
-		e = &env{
-			key:    f.Name,
-			value:  fv.Interface(),
+		saved[f.Name] = fv.Interface()
+	}
+	if len(saved) > 0 {
+		return &env{
+			data:   saved,
 			parent: e,
 		}
 	}
@@ -55,13 +58,16 @@ func (e *env) load(dest Test) error {
 
 		set := false
 		for e := e; e != nil; e = e.parent {
-			if e.key == f.Name {
-				ev := reflect.ValueOf(e.value)
-				if ev.Type().AssignableTo(fv.Type()) {
-					set = true
-					fv.Set(ev)
-					break
-				}
+			v, ok := e.data[f.Name]
+			if !ok {
+				continue
+			}
+
+			ev := reflect.ValueOf(v)
+			if ev.Type().AssignableTo(fv.Type()) {
+				set = true
+				fv.Set(ev)
+				break
 			}
 		}
 

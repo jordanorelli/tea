@@ -41,12 +41,13 @@ func TestSave(t *testing.T) {
 			t.Fatalf("saw nil env when expecting a valid env")
 		}
 
-		if e.key != "Foo" {
-			t.Errorf("expected key %q but saw %q instead", "Foo", e.key)
+		foo, ok := e.data["Foo"]
+		if !ok {
+			t.Errorf("expected field Foo to be saved but was not saved")
 		}
 
-		if e.value != 5 {
-			t.Errorf("expected value %v but saw %v instead", 5, e.value)
+		if foo != 5 {
+			t.Errorf("expected value %v but saw %v instead", 5, foo)
 		}
 	})
 
