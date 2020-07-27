@@ -130,12 +130,3 @@ func isLoadField(f reflect.StructField) bool {
 	}
 	return false
 }
-
-// parseName parses the name for a given test
-func parseName(test Test) string {
-	if s, ok := test.(interface{ String() string }); ok {
-		return s.String()
-	}
-	iv := reflect.ValueOf(test)
-	return iv.Type().Name()
-}

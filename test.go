@@ -2,6 +2,7 @@ package tea
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -31,3 +32,21 @@ func (f failure) Run(t *testing.T) {
 type empty struct{}
 
 func (e empty) Run(t *testing.T) {}
+
+// parseName parses the name for a given test
+func parseName(test Test) string {
+	if s, ok := test.(interface{ String() string }); ok {
+		return s.String()
+	}
+
+	tv := reflect.ValueOf(test)
+	switch tv.Type().Kind() {
+	case reflect.Ptr:
+		tv = tv.Elem()
+	}
+	name := tv.Type().Name()
+	if name == "" {
+		return "unknown-test"
+	}
+	return name
+}
