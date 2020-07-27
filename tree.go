@@ -136,5 +136,6 @@ func parseName(test Test) string {
 	if s, ok := test.(interface{ String() string }); ok {
 		return s.String()
 	}
-	return "???"
+	iv := reflect.ValueOf(test)
+	return iv.Type().Name()
 }
