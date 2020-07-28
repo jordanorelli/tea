@@ -81,7 +81,9 @@ func TestLoad(t *testing.T) {
 			Foo int `tea:"load"`
 		}
 
-		e.load(&test)
+		if err := e.load(&test); err != nil {
+			t.Errorf("unexpected load error: %v", err)
+		}
 		if test.Foo != 5 {
 			t.Errorf("expected value %v but saw %v instead", 5, test.Foo)
 		}
@@ -99,6 +101,25 @@ func TestLoad(t *testing.T) {
 
 		if err := e.load(&test); err == nil {
 			t.Errorf("expected a load error but did not see one")
+		}
+	})
+
+	t.Run("skip load if field is already set", func(t *testing.T) {
+		e := &env{
+			data: map[string]interface{}{"Foo": 3},
+		}
+
+		var test struct {
+			empty
+			Foo int `tea:"load"`
+		}
+		test.Foo = 5
+
+		if err := e.load(&test); err != nil {
+			t.Errorf("unexpected load error: %v", err)
+		}
+		if test.Foo != 5 {
+			t.Errorf("load overwrote expected value of 5 with %d", test.Foo)
 		}
 	})
 }

@@ -60,6 +60,11 @@ func (e *env) load(dest Test) error {
 			continue
 		}
 		fv := destV.Field(i)
+		if !fv.IsZero() {
+			// the value is already populated, so we don't want to overwrite
+			// it.
+			continue
+		}
 
 		set := false
 		for e := e; e != nil; e = e.parent {
