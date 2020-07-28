@@ -130,3 +130,28 @@ func isLoadField(f reflect.StructField) bool {
 	}
 	return false
 }
+
+func isMatchField(f reflect.StructField) bool {
+	// PkgPath is empty string when the identifier is unexported.
+	if f.PkgPath != "" {
+		return false
+	}
+	parts := strings.Split(f.Tag.Get("tea"), ",")
+	for _, part := range parts {
+		if part == "match" {
+			return true
+		}
+	}
+	return false
+}
+
+func getMatchFields(t reflect.Type) []reflect.StructField {
+	var fields []reflect.StructField
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if isMatchField(f) {
+			fields = append(fields, f)
+		}
+	}
+	return fields
+}
