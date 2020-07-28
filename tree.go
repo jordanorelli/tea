@@ -47,7 +47,10 @@ func exec(t *testing.T, tree *Tree) ([]Test, *env) {
 
 	history, e := exec(t, tree.parent)
 	test := clone(tree.test)
-	e.load(test)
+	if err := e.load(test); err != nil {
+		// TODO: figure out how to handle load failures like this.
+		panic("load failure: " + err.Error())
+	}
 	test.Run(t)
 	return append([]Test{test}, history...), e.save(test)
 }
