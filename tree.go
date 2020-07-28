@@ -75,7 +75,10 @@ func New(test Test) *Tree {
 	}
 }
 
-// Tree represents a node in a Tree of tests
+// Tree represents a node in a Tree of tests. Callers create Tree elements in
+// one of two ways: by calling New to create a new Tree with the provided test
+// as its root, or by calling the Child method on an existing Tree to add a
+// child node to the tree.
 type Tree struct {
 	test     Test
 	name     string

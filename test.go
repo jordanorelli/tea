@@ -6,10 +6,17 @@ import (
 	"testing"
 )
 
+// Test is a test value: a value that, given an instance of a testing.T, can be
+// used to execute a single test.
 type Test interface {
 	Run(*testing.T)
 }
 
+// After defines the interface used for performing test cleanup. If a Test
+// value also implements After, that test's After method will be called after
+// all tests are run. Tests in a sequence will have their After methods called
+// in the reverse order of their Run methods; a test always runs its After
+// method after all of its children have completed their own After methods.
 type After interface {
 	After(*testing.T)
 }
