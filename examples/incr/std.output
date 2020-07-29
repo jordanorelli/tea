@@ -1,0 +1,6 @@
+--- FAIL: TestTwice (0.00s)
+    --- FAIL: TestTwice/increment#01 (0.00s)
+        std_test.go:34: expected x to be 2, is 3 instead
+FAIL
+exit status 1
+FAIL	github.com/jordanorelli/tea/examples/incr	0.001s

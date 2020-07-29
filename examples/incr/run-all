@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+go test 2>&1 | tee tea.output
+go test -tags std 2>&1 | tee std.output
+go test -tags convey 2>&1 | tee convey.output
