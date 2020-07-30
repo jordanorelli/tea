@@ -1,8 +1,24 @@
-.
+=== RUN   TestOnce
+
+  Given some integer with a starting value 
+    When the integer is incremented 
+      The value should be greater by one ✔
+
+
 1 total assertion
 
-..
+--- PASS: TestOnce (0.00s)
+=== RUN   TestTwice
+
+  Given some integer with a starting value 
+    When the integer is incremented 
+      The value should be greater by one ✔
+    When the integer is incremented again 
+      The value should be greater by one ✔
+
+
 3 total assertions
 
+--- PASS: TestTwice (0.00s)
 PASS
-ok  	github.com/jordanorelli/tea/examples/incr	0.002s
+ok  	github.com/jordanorelli/tea/examples/incr	0.003s

@@ -7,15 +7,20 @@ import (
 	"testing"
 )
 
+// testInt is a Test that does nothing. It always passes. It acts as a
+// container for a value to be made available to future tests.
 type testInt struct {
 	// the "save" struct tag instructs tea to save this field for future tests.
 	X int `tea:"save"`
 }
 
+// Run satisfies the tea.Test interface so that testInt may be used as a
+// tea.Test
 func (test *testInt) Run(t *testing.T) {
 	t.Logf("saving to future tests X = %d", test.X)
 }
 
+// testIncr
 type testIncr struct {
 	// the "load" struct tag instructs tea to load the value of this field from
 	// previous tests in this run. Like before, we also use a "save" tag.
@@ -23,6 +28,7 @@ type testIncr struct {
 	expect int
 }
 
+// Run satisfies the tea.Test interface
 func (test *testIncr) Run(t *testing.T) {
 	t.Logf("loaded from parent tests X = %d", test.X)
 	test.X++

@@ -1,6 +1,14 @@
+=== RUN   TestOnce
+=== RUN   TestOnce/increment
+--- PASS: TestOnce (0.00s)
+    --- PASS: TestOnce/increment (0.00s)
+=== RUN   TestTwice
+=== RUN   TestTwice/increment
+=== RUN   TestTwice/increment#01
+    TestTwice/increment#01: std_test.go:34: expected x to be 2, is 3 instead
 --- FAIL: TestTwice (0.00s)
+    --- PASS: TestTwice/increment (0.00s)
     --- FAIL: TestTwice/increment#01 (0.00s)
-        std_test.go:34: expected x to be 2, is 3 instead
 FAIL
 exit status 1
-FAIL	github.com/jordanorelli/tea/examples/incr	0.002s
+FAIL	github.com/jordanorelli/tea/examples/incr	0.001s
