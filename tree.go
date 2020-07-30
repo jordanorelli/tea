@@ -10,6 +10,11 @@ import (
 // provided node and descending to all of its children. All of its parent nodes
 // will also be run since they are prerequisites, but none of its sibling node
 // will be executed.
+//
+// Since Run will walk all of the descendents of the provided node, a typical
+// usage would be to write a top-level Go test which is a single tree of tea
+// Test values. You would then call Run just once, by supplying to Run the root
+// node of your tree.
 func Run(t *testing.T, tree *Tree) {
 	t.Run(tree.name, func(t *testing.T) {
 		history, _ := exec(t, tree)

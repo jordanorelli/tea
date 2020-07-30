@@ -1,2 +1,17 @@
-PASS
-ok  	github.com/jordanorelli/tea/examples/incr	0.001s
+--- FAIL: TestOnce (0.00s)
+    --- FAIL: TestOnce/testInt (0.00s)
+        tea_test.go:15: saving to future tests X = 1
+        --- FAIL: TestOnce/testInt/testIncr (0.00s)
+            tea_test.go:15: saving to future tests X = 1
+            tea_test.go:24: loaded from parent tests X = 1
+            tea_test.go:29: saving to future tests X = 2
+            --- FAIL: TestOnce/testInt/testIncr/testIncr (0.00s)
+                tea_test.go:15: saving to future tests X = 1
+                tea_test.go:24: loaded from parent tests X = 1
+                tea_test.go:29: saving to future tests X = 2
+                tea_test.go:24: loaded from parent tests X = 1
+                tea_test.go:27: expected X to be 3, is 2 instead
+                tea_test.go:29: saving to future tests X = 2
+FAIL
+exit status 1
+FAIL	github.com/jordanorelli/tea/examples/incr	0.002s
