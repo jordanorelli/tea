@@ -20,7 +20,8 @@ func (test *testInt) Run(t *testing.T) {
 	t.Logf("saving to future tests X = %d", test.X)
 }
 
-// testIncr
+// testIncr increments an integer and checks that the result of incrementing
+// the integer is an expected value.
 type testIncr struct {
 	// the "load" struct tag instructs tea to load the value of this field from
 	// previous tests in this run. Like before, we also use a "save" tag.
