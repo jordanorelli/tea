@@ -50,30 +50,43 @@ func (test *testRequest) Run(t *testing.T) {
 }
 
 func TestServer(t *testing.T) {
-	type series []testRequest
+	type list []testRequest
 
-	runSeries := func(node *tea.Tree, tests series) *tea.Tree {
-		for i, _ := range tests {
+	runSeries := func(node *tea.Tree, tests list) *tea.Tree {
+		for i := 0; i < len(tests); i++ {
 			node = node.Child(&tests[i])
 		}
 		return node
 	}
 
+	runParallel := func(node *tea.Tree, tests list) {
+		for i := 0; i < len(tests); i++ {
+			node.Child(&tests[i])
+		}
+	}
+
 	root := tea.New(&testStartServer{})
 
-	runSeries(root, series{
+	runSeries(root, list{
 		{path: "/users/alice", expect: 1},
 		{path: "/users/alice", expect: 2},
 		{path: "/users/alice", expect: 3},
 		{path: "/users/alice", expect: 4},
 	})
 
-	runSeries(root, series{
+	runSeries(root, list{
 		{path: "/users/alice", expect: 1},
 		{path: "/users/bob", expect: 1},
 		{path: "/users/alice", expect: 2},
 		{path: "/users/alice", expect: 3},
 		{path: "/users/bob", expect: 2},
+	})
+
+	runParallel(root, list{
+		{path: "/users/alice", expect: 1},
+		{path: "/users/alice", expect: 1},
+		{path: "/users/alice", expect: 1},
+		{path: "/users/alice", expect: 1},
 	})
 
 	tea.Run(t, root)
