@@ -75,8 +75,8 @@ func TestServer(t *testing.T) {
 	})
 
 	runSeries(root, list{
-		{path: "/users/alice", expect: 1},
 		{path: "/users/bob", expect: 1},
+		{path: "/users/alice", expect: 1},
 		{path: "/users/alice", expect: 2},
 		{path: "/users/alice", expect: 3},
 		{path: "/users/bob", expect: 2},
