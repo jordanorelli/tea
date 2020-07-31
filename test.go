@@ -12,6 +12,18 @@ type Test interface {
 	Run(*testing.T)
 }
 
+// clone clones a test value, yielding a new test value that can be executed
+// and mutated such that the original is not mutated. Tests containing pointers
+// to objects that were not created by tea will probably not work right. That's
+// like, kinda on you though, I can't really enforce things that the Go type
+// system doesn't let me enforce.
+func clone(t Test) Test {
+	srcV := reflect.ValueOf(t).Elem()
+	destV := reflect.New(srcV.Type())
+	destV.Elem().Set(srcV)
+	return destV.Interface().(Test)
+}
+
 // After defines the interface used for performing test cleanup. If a Test
 // value also implements After, that test's After method will be called after
 // all tests are run. Tests in a sequence will have their After methods called

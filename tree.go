@@ -100,15 +100,6 @@ func (t *Tree) Child(test Test) *Tree {
 	return child
 }
 
-// clone clones a test value, yielding a new test value that can be executed
-// and mutated such that the original is not mutated.
-func clone(t Test) Test {
-	srcV := reflect.ValueOf(t).Elem()
-	destV := reflect.New(srcV.Type())
-	destV.Elem().Set(srcV)
-	return destV.Interface().(Test)
-}
-
 // isSaveField takes a struct field and checks its tags for a save tag,
 // indicating that the field's value should persist between tests
 func isSaveField(f reflect.StructField) bool {
