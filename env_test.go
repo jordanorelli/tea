@@ -1,8 +1,17 @@
 package tea
 
 import (
+	"errors"
 	"testing"
 )
+
+func assertErrorType(t *testing.T, err error, target error) {
+	if !errors.Is(err, target) {
+		t.Errorf("expected %v, instead saw %v", target, err)
+	} else {
+		t.Logf("found expected %v: %v", target, err)
+	}
+}
 
 func TestSave(t *testing.T) {
 	t.Run("empty begets nil", func(t *testing.T) {
@@ -100,7 +109,9 @@ func TestLoad(t *testing.T) {
 		}
 
 		if err := e.load(&test); err == nil {
-			t.Errorf("expected a load error but did not see one")
+			t.Fatalf("expected a load error but did not see one")
+		} else {
+			assertErrorType(t, err, PlanError)
 		}
 	})
 
@@ -138,6 +149,8 @@ func TestMatch(t *testing.T) {
 
 		if err := e.load(&test); err == nil {
 			t.Errorf("expected a load error but did not see one")
+		} else {
+			assertErrorType(t, err, PlanError)
 		}
 	})
 
@@ -158,6 +171,30 @@ func TestMatch(t *testing.T) {
 
 		if err := e.load(&test); err == nil {
 			t.Errorf("expected a load error but did not see one")
+		} else {
+			assertErrorType(t, err, RunError)
+		}
+	})
+
+	t.Run("required match field has wrong type", func(t *testing.T) {
+		e := &env{
+			data: map[string]interface{}{
+				"Foo":  5,
+				"Name": []byte("alice"),
+			},
+		}
+
+		var test struct {
+			Passing
+			Name string `tea:"match"`
+			Foo  int    `tea:"load"`
+		}
+		test.Name = "bob"
+
+		if err := e.load(&test); err == nil {
+			t.Errorf("expected a load error but did not see one")
+		} else {
+			assertErrorType(t, err, PlanError)
 		}
 	})
 
@@ -213,7 +250,7 @@ func TestMatch(t *testing.T) {
 		}
 	})
 
-	t.Run("complicated match", func(t *testing.T) {
+	t.Run("layer-skipping matches", func(t *testing.T) {
 		type connect struct {
 			Passing
 			Role string `tea:"save"`
@@ -269,7 +306,80 @@ func TestMatch(t *testing.T) {
 				t.Errorf("expected host to have ID 1, has %d instead", host.ID)
 			}
 		}
+	})
 
+	t.Run("layer-skipping matches", func(t *testing.T) {
+		type connect struct {
+			Passing
+			Role string `tea:"save"`
+			Name string `tea:"save"`
+			ID   int    `tea:"save"`
+		}
+
+		type request struct {
+			Passing
+			Role string `tea:"match"`
+			Name string `tea:"match"`
+			ID   int    `tea:"load"`
+			body string
+		}
+
+		e := mkenv(connect{
+			Role: "host",
+			ID:   1,
+		})
+		e = e.save(request{
+			Role: "host",
+			body: "one",
+		})
+		e = e.save(connect{
+			Role: "player",
+			Name: "alice",
+			ID:   2000000,
+		})
+		e = e.save(Pass)
+		e = e.save(connect{
+			Role: "player",
+			Name: "alice",
+			ID:   2,
+		})
+		e = e.save(connect{
+			Role: "player",
+			Name: "bob",
+			ID:   3,
+		})
+		e = e.save(Pass)
+		e = e.save(request{
+			Role: "player",
+			body: "one",
+		})
+
+		bob := request{Role: "player", Name: "bob"}
+		if err := e.load(&bob); err != nil {
+			t.Errorf("failed to load bob: %s", err)
+		} else {
+			if bob.ID != 3 {
+				t.Errorf("expected bob to have ID 3, has %d instead", bob.ID)
+			}
+		}
+
+		alice := request{Role: "player", Name: "alice"}
+		if err := e.load(&alice); err != nil {
+			t.Errorf("failed to load alice: %s", err)
+		} else {
+			if alice.ID != 2 {
+				t.Errorf("expected alice to have ID 2, has %d instead", alice.ID)
+			}
+		}
+
+		host := request{Role: "host"}
+		if err := e.load(&host); err != nil {
+			t.Errorf("failed to load host: %s", err)
+		} else {
+			if host.ID != 1 {
+				t.Errorf("expected host to have ID 1, has %d instead", host.ID)
+			}
+		}
 	})
 }
 

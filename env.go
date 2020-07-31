@@ -53,9 +53,9 @@ func (e *env) load(dest Test) error {
 	destV := reflect.ValueOf(dest).Elem()
 	destT := destV.Type()
 
-	e = e.match(dest)
-	if e == nil {
-		return fmt.Errorf("failed to find a matching environment")
+	e, err := e.match(dest)
+	if err != nil {
+		return fmt.Errorf("match failed: %w", err)
 	}
 
 	for i := 0; i < destT.NumField(); i++ {
@@ -86,23 +86,29 @@ func (e *env) load(dest Test) error {
 		}
 
 		if !set {
-			return fmt.Errorf("failed to set required field: %q", f.Name)
+			return fmt.Errorf("%w: failed to set required field: %q", PlanError, f.Name)
 		}
 	}
 	return nil
 }
 
-func (e *env) match(dest Test) *env {
+func (e *env) match(dest Test) (*env, error) {
 	destV := reflect.ValueOf(dest).Elem()
 	destT := destV.Type()
 
 	required := getMatchFields(destT)
 	if len(required) == 0 {
-		return e
+		return e, nil
 	}
 
-	var last *env
-	var leaf *env
+	var (
+		last                  *env
+		leaf                  *env
+		foundWithWrongType    = make(map[string]bool)
+		foundWithMatchingType = make(map[string]bool)
+		foundWithWrongValue   = make(map[string]bool)
+		foundWithCorrectValue = make(map[string]bool)
+	)
 
 	for e := e; e != nil; e = e.parent {
 		present := make([]reflect.StructField, 0, len(required))
@@ -113,7 +119,10 @@ func (e *env) match(dest Test) *env {
 				break
 			}
 			if reflect.TypeOf(ev).AssignableTo(f.Type) {
+				foundWithMatchingType[f.Name] = true
 				present = append(present, f)
+			} else {
+				foundWithWrongType[f.Name] = true
 			}
 		}
 
@@ -125,7 +134,10 @@ func (e *env) match(dest Test) *env {
 			for _, f := range required {
 				fv := destV.FieldByName(f.Name)
 				if fv.Interface() == e.data[f.Name] {
+					foundWithCorrectValue[f.Name] = true
 					matched[f.Name] = e.data[f.Name]
+				} else {
+					foundWithWrongValue[f.Name] = true
 				}
 			}
 
@@ -156,5 +168,33 @@ func (e *env) match(dest Test) *env {
 		}
 	}
 
-	return leaf
+	if leaf == nil {
+		var notFound []string
+		for _, f := range required {
+			if !foundWithMatchingType[f.Name] && !foundWithWrongType[f.Name] {
+				notFound = append(notFound, f.Name)
+			}
+		}
+		switch len(notFound) {
+		case 0:
+			break
+		case 1:
+			return nil, fmt.Errorf("%w: missing required field: %q", PlanError, notFound[0])
+		default:
+			return nil, fmt.Errorf("%w: missing %d required fields: %s", PlanError, len(notFound), notFound)
+		}
+		for f, _ := range foundWithWrongType {
+			if !foundWithMatchingType[f] {
+				return nil, fmt.Errorf("%w: field %s was only found with unmatching types", PlanError, f)
+			}
+		}
+		for f, _ := range foundWithWrongValue {
+			if !foundWithCorrectValue[f] {
+				return nil, fmt.Errorf("%w: field %s was only found with unmatching values", RunError, f)
+			}
+		}
+		return nil, fmt.Errorf("%w: required match fields not encountered on the same layer", PlanError)
+	}
+
+	return leaf, nil
 }
