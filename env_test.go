@@ -276,29 +276,78 @@ func TestMatch(t *testing.T) {
 // Constructing a test node that has multiple parents:
 // -----------------------------------------------------------------------------
 //
-// In this example, B is an optional test.
+// So far the hardest thing conceptually has been figuring out how we might
+// construct a test that has two parents. This is entirely unhandled by
+// existing test frameworks to my knowledge, but is extremely useful in
+// determining that a part of our system has no effect on another part of our
+// system.
+//
+// Here is an example of a small test graph in which B is an optional test.
 //
 //    Logical    Execution
 //
 //       A           A
 //      /|          / \
 //     / |         /   \
-//    B  | ---->  B     C'
+//    B  | ---->  B     C
 //     \ |        |
 //      \|        |
 //       C        C
 //
-// This logical graph of test dependencies would yield an execution plan
-// consisting of two test chains:
+// On the left, we have a graph representing the logical relationship between
+// the tests. On the right, a graph representing the relationship between how
+// the tests would be executed. The test C has two parents, which means it is
+// represented twice in the execution plan, as it will be run separately for
+// each parent: once following A, and once following B. The shape of this test
+// can be used to confirm that test C will pass both in the event that test B
+// has been run and test B has not been run. This is used to confirm that the
+// portion of our system tested by B does not violate the invariants of the
+// portion of our system tested by C.
+//
+// The execution plan for this set of tests would consiste of the following
+// test chains:
 //
 //   A -> B -> C
-//   A -> C
+//   A ------> C
+//
+// Which go test -v would output as:
+//
+//   === RUN A
+//   === RUN A/B
+//   === RUN A/B/C
+//   === RUN A/C
+//   --- PASS: A
+//       --- PASS: A/B
+//           --- PASS: A/B/C
+//       --- PASS: A/C
+//
+// My idea for how this is solved is to rename tea.Tree to tea.Selection, since
+// it would represent something different entirely. Everywhere that tea.Tree
+// appears, we would use tea.Selection instead. A selection is defined as a set
+// of nodes in the test graph. A selection would have a Child method as
+// tea.Tree does now, and what it would do is add to every node in the
+// selection the provided test as a child. We would define an additional method
+// Add on the selection, which takes another selection and returns a selection
+// whose selected nodes is the union of the two input selections. More simply:
+// you can add selections together.
 //
 // We could write this as follows:
 //
-//   root := New(A)
-//   b := root.Child(B)
-//   root.And(b).Child(C)
+//   1   root := New(A)
+//   2   b := root.Child(B)
+//   3   both := root.And(b)
+//   4   leaves := both.Child(C)
+//
+//   line 1: root is a selection consisting of one node. That node contains
+//           test A.
+//   line 2: b is a selection consisting of one node. That node contains
+//           test B. The node is a child of the root node.
+//   line 3: both is a selection consisting of both of the nodes that
+//           currently exist in the graph.
+//   line 4: we add a new node to the graph for every node in the input
+//           selection. leaves is a new selection, consisting of the two added
+//           nodes, both of which contain the value of C, but having different
+//           parents.
 //
 // Alternatively:
 //
@@ -314,7 +363,10 @@ func TestMatch(t *testing.T) {
 //   This last form is not strictly the same, since it includes an additional
 //   node in the graph which is a passing test. However since Pass is a
 //   specific example, we can trivially remove nodes having a test value of
-//   Pass in the planning phase.
+//   Pass in the planning phase. I'm not sure if I like this. I've tripped
+//   myself up thinking about it because I keep forgetting that Child does not
+//   make a sequence. Perhaps "Child" is no longer the right name for this
+//   method.
 //
 // Another simple example: a diamond-shaped test graph
 //
@@ -329,8 +381,22 @@ func TestMatch(t *testing.T) {
 //       D            D     D'
 //
 // Test Plan:
-//   - A -> B -> D
-//   - A -> C -> D
+//
+//   A -> B -> D
+//   A -> C -> D
+//
+// go test -v output:
+//
+//   === RUN A
+//   === RUN A/B
+//   === RUN A/B/D
+//   === RUN A/C
+//   === RUN A/C/D
+//   --- PASS: A
+//       --- PASS: A/B
+//           --- PASS: A/B/D
+//       --- PASS: A/C
+//           --- PASS: A/C/D
 //
 // Expressed in test code as follows:
 //
@@ -356,15 +422,25 @@ func TestMatch(t *testing.T) {
 //   E     D
 //
 // Test Plan:
-//   - A -> B -> E
-//   - A -> B -> D
-//   - A -> C -> D
 //
-// Essentially what we're saying is:
-//   Run test A.
-//   If test A passes:
-//     Run test B.
-//     Run test C.
+//   A -> B -> E
+//   A -> B -> D
+//   A -> C -> D
+//
+// go test -v output:
+//
+//   === RUN A
+//   === RUN A/B
+//   === RUN A/B/E
+//   === RUN A/B/D
+//   === RUN A/C
+//   === RUN A/C/D
+//   --- PASS: A
+//       --- PASS: A/B
+//           --- PASS: A/B/E
+//           --- PASS: A/B/D
+//       --- PASS: A/C
+//           --- PASS: A/C/D
 //
 // Expressed as:
 //
@@ -374,3 +450,5 @@ func TestMatch(t *testing.T) {
 //   b.Child(E)
 //   b.And(c).Child(D)
 //
+// The ergonomics with this case are quite poor. I'm not sure how to improve
+// them.
