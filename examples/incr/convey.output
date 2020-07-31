@@ -21,4 +21,4 @@
 
 --- PASS: TestTwice (0.00s)
 PASS
-ok  	github.com/jordanorelli/tea/examples/incr	0.003s
+ok  	github.com/jordanorelli/tea/examples/incr	0.002s

@@ -3,6 +3,8 @@ github.com/jordanorelli/tea v0.0.3 h1:6FNc5NE3O+2RDgK9nq3x8hZ0b5w5bFcz94VG67jbRb
 github.com/jordanorelli/tea v0.0.3/go.mod h1:mnnRKfuTTk8d+3rcOC6TIiBOLVG8RQitOtFtCfQo8Bw=
 github.com/jordanorelli/tea v0.0.5-0.20200730012141-ef32839cd424 h1:8ZD+nW5GiHLU0vs/uLzvklxZNwRvHgCQSEMDnv4yLWY=
 github.com/jordanorelli/tea v0.0.5-0.20200730012141-ef32839cd424/go.mod h1:mnnRKfuTTk8d+3rcOC6TIiBOLVG8RQitOtFtCfQo8Bw=
+github.com/jordanorelli/tea v0.0.5-0.20200731133129-a3346f59ccfc h1:MJggH/ygkyo1NRQz+74YR9qB1ACdHphs/TMsUYedISY=
+github.com/jordanorelli/tea v0.0.5-0.20200731133129-a3346f59ccfc/go.mod h1:mnnRKfuTTk8d+3rcOC6TIiBOLVG8RQitOtFtCfQo8Bw=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
