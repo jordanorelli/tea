@@ -212,9 +212,73 @@ func TestMatch(t *testing.T) {
 			t.Errorf("expected Foo to load 5 but is %d instead", test.Foo)
 		}
 	})
+
+	t.Run("complicated match", func(t *testing.T) {
+		type connect struct {
+			Passing
+			Role string `tea:"save"`
+			Name string `tea:"save"`
+			ID   int    `tea:"save"`
+		}
+
+		type request struct {
+			Passing
+			Role string `tea:"match"`
+			Name string `tea:"match"`
+			ID   int    `tea:"load"`
+		}
+
+		e := mkenv(connect{
+			Role: "host",
+			ID:   1,
+		})
+		e = e.save(connect{
+			Role: "player",
+			Name: "alice",
+			ID:   2,
+		})
+		e = e.save(connect{
+			Role: "player",
+			Name: "bob",
+			ID:   3,
+		})
+
+		bob := request{Role: "player", Name: "bob"}
+		if err := e.load(&bob); err != nil {
+			t.Errorf("failed to load bob: %s", err)
+		} else {
+			if bob.ID != 3 {
+				t.Errorf("expected bob to have ID 3, has %d instead", bob.ID)
+			}
+		}
+
+		alice := request{Role: "player", Name: "alice"}
+		if err := e.load(&alice); err != nil {
+			t.Errorf("failed to load alice: %s", err)
+		} else {
+			if alice.ID != 2 {
+				t.Errorf("expected alice to have ID 2, has %d instead", alice.ID)
+			}
+		}
+
+		host := request{Role: "host"}
+		if err := e.load(&host); err != nil {
+			t.Errorf("failed to load host: %s", err)
+		} else {
+			if host.ID != 1 {
+				t.Errorf("expected host to have ID 1, has %d instead", host.ID)
+			}
+		}
+
+	})
 }
 
-// A.Optional(B).Child(C)
+// Constructing a test node that has multiple parents:
+// -----------------------------------------------------------------------------
+//
+// In this example, B is an optional test.
+//
+//    Logical    Execution
 //
 //       A           A
 //      /|          / \
@@ -223,8 +287,38 @@ func TestMatch(t *testing.T) {
 //     \ |        |
 //      \|        |
 //       C        C
-
-// what to call this thing?
+//
+// This logical graph of test dependencies would yield an execution plan
+// consisting of two test chains:
+//
+//   A -> B -> C
+//   A -> C
+//
+// We could write this as follows:
+//
+//   root := New(A)
+//   b := root.Child(B)
+//   root.And(b).Child(C)
+//
+// Alternatively:
+//
+//   root := New(A)
+//   root.Child(B).And(root).Child(C)
+//
+// If we permit a selection to append multiple children, we could write this as
+// follows:
+//
+//   root := New(A)
+//   root.Child(B, Pass).Child(C)
+//
+//   This last form is not strictly the same, since it includes an additional
+//   node in the graph which is a passing test. However since Pass is a
+//   specific example, we can trivially remove nodes having a test value of
+//   Pass in the planning phase.
+//
+// Another simple example: a diamond-shaped test graph
+//
+//    Logical         Execution
 //
 //       A               A
 //      / \             / \
@@ -233,3 +327,50 @@ func TestMatch(t *testing.T) {
 //     \   /          |     |
 //      \ /           |     |
 //       D            D     D'
+//
+// Test Plan:
+//   - A -> B -> D
+//   - A -> C -> D
+//
+// Expressed in test code as follows:
+//
+//   root := New(A)
+//   both := root.Child(B, C)
+//   both.Child(D)
+//
+// Alternatively:
+//
+//   New(A).Child(B, C).Child(D)
+//
+//
+//
+// This API is fairly straightforward to use, but breaks down with even simple
+// shapes:
+//
+//         A
+//        / \
+//       /   \
+//      B     C
+//     / \   /
+//    /   \ /
+//   E     D
+//
+// Test Plan:
+//   - A -> B -> E
+//   - A -> B -> D
+//   - A -> C -> D
+//
+// Essentially what we're saying is:
+//   Run test A.
+//   If test A passes:
+//     Run test B.
+//     Run test C.
+//
+// Expressed as:
+//
+//   root := New(A)
+//   b := root.Child(B)
+//   c := root.Child(C)
+//   b.Child(E)
+//   b.And(c).Child(D)
+//
