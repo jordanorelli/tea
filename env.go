@@ -1,13 +1,41 @@
 package tea
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 )
 
 type env struct {
 	data   map[string]interface{}
 	parent *env
+}
+
+func (e *env) String() string {
+	var buf bytes.Buffer
+	e.pretty(&buf)
+	return buf.String()
+}
+
+func (e *env) pretty(buf *bytes.Buffer) {
+	if e.parent != nil {
+		e.parent.pretty(buf)
+		buf.WriteRune(' ')
+	}
+
+	var parts []string
+	for k, v := range e.data {
+		if s, ok := v.(string); ok {
+			parts = append(parts, fmt.Sprintf("[%s=%q]", k, s))
+		} else {
+			parts = append(parts, fmt.Sprintf("[%s=%v]", k, v))
+		}
+	}
+	sort.Strings(parts)
+
+	fmt.Fprintf(buf, "{%s}", strings.Join(parts, ", "))
 }
 
 func mkenv(test Test) *env {
@@ -110,6 +138,16 @@ func (e *env) match(dest Test) (*env, error) {
 		foundWithCorrectValue = make(map[string]bool)
 	)
 
+	keep := func(v *env) {
+		if leaf == nil {
+			leaf = &env{data: v.data}
+			last = leaf
+		} else {
+			next := &env{data: v.data, parent: last}
+			last = next
+		}
+	}
+
 	for e := e; e != nil; e = e.parent {
 		present := make([]reflect.StructField, 0, len(required))
 
@@ -131,6 +169,8 @@ func (e *env) match(dest Test) (*env, error) {
 			// check that the values in the env match the values that were
 			// asked for.
 			matched := make(map[string]interface{})
+			wrongVal := make(map[string]bool)
+
 			for _, f := range required {
 				fv := destV.FieldByName(f.Name)
 				if fv.Interface() == e.data[f.Name] {
@@ -138,32 +178,25 @@ func (e *env) match(dest Test) (*env, error) {
 					matched[f.Name] = e.data[f.Name]
 				} else {
 					foundWithWrongValue[f.Name] = true
+					wrongVal[f.Name] = true
 				}
+			}
+
+			if len(wrongVal) > 0 {
+				continue
 			}
 
 			// all required match conditions are met
 			if len(matched) == len(required) {
-				if leaf == nil {
-					// if this is the first matched layer, it is the leaf of the
-					// resultant env.
-					leaf = e
-					last = leaf
-				} else {
-					// otherwise we keep this layer, since it matched our match
-					// requirements. Another layer already did, but there may
-					// be other things in the layer we want to keep.
-					last.parent = e
-					last = e
-				}
+				keep(e)
 			}
 		} else {
 			// the required fields do not exist in the layer, so this layer
 			// does not conflict with the match requirement.
 			if leaf != nil {
-				// since we have a leaf node, we have found a matching layer,
-				// and since this layer does not conflict, we keep it.
-				last.parent = e
-				last = e
+				// since we have a leaf node, we have already found a matching
+				// layer, and since this layer does not conflict, we keep it.
+				keep(e)
 			}
 		}
 	}

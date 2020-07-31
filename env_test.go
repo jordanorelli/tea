@@ -280,6 +280,7 @@ func TestMatch(t *testing.T) {
 			ID:   3,
 		})
 
+		t.Logf("before  bob loaded %v", e)
 		bob := request{Role: "player", Name: "bob"}
 		if err := e.load(&bob); err != nil {
 			t.Errorf("failed to load bob: %s", err)
@@ -288,6 +289,7 @@ func TestMatch(t *testing.T) {
 				t.Errorf("expected bob to have ID 3, has %d instead", bob.ID)
 			}
 		}
+		t.Logf("after   bob loaded %v", e)
 
 		alice := request{Role: "player", Name: "alice"}
 		if err := e.load(&alice); err != nil {
@@ -297,6 +299,7 @@ func TestMatch(t *testing.T) {
 				t.Errorf("expected alice to have ID 2, has %d instead", alice.ID)
 			}
 		}
+		t.Logf("after alice loaded %v", e)
 
 		host := request{Role: "host"}
 		if err := e.load(&host); err != nil {
@@ -308,7 +311,7 @@ func TestMatch(t *testing.T) {
 		}
 	})
 
-	t.Run("layer-skipping matches", func(t *testing.T) {
+	t.Run("junk-filtering matches", func(t *testing.T) {
 		type connect struct {
 			Passing
 			Role string `tea:"save"`
@@ -324,14 +327,21 @@ func TestMatch(t *testing.T) {
 			body string
 		}
 
+		type junk struct {
+			Passing
+			Fart string `tea:"save"`
+		}
+
 		e := mkenv(connect{
 			Role: "host",
 			ID:   1,
 		})
+		e = e.save(junk{Fart: "first-junk"})
 		e = e.save(request{
 			Role: "host",
 			body: "one",
 		})
+
 		e = e.save(connect{
 			Role: "player",
 			Name: "alice",
@@ -343,6 +353,7 @@ func TestMatch(t *testing.T) {
 			Name: "alice",
 			ID:   2,
 		})
+		e = e.save(Pass)
 		e = e.save(connect{
 			Role: "player",
 			Name: "bob",
@@ -353,8 +364,12 @@ func TestMatch(t *testing.T) {
 			Role: "player",
 			body: "one",
 		})
+		e = e.save(junk{Fart: "second-junk"})
 
 		bob := request{Role: "player", Name: "bob"}
+		alice := request{Role: "player", Name: "alice"}
+		host := request{Role: "host"}
+
 		if err := e.load(&bob); err != nil {
 			t.Errorf("failed to load bob: %s", err)
 		} else {
@@ -363,8 +378,8 @@ func TestMatch(t *testing.T) {
 			}
 		}
 
-		alice := request{Role: "player", Name: "alice"}
 		if err := e.load(&alice); err != nil {
+			t.Log(e)
 			t.Errorf("failed to load alice: %s", err)
 		} else {
 			if alice.ID != 2 {
@@ -372,7 +387,6 @@ func TestMatch(t *testing.T) {
 			}
 		}
 
-		host := request{Role: "host"}
 		if err := e.load(&host); err != nil {
 			t.Errorf("failed to load host: %s", err)
 		} else {
