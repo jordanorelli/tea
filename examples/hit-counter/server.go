@@ -12,6 +12,9 @@ type response struct {
 	Hits int  `json:"hits"`
 }
 
+// server implements an http hit-counter server. The hit-count server responds
+// to GET requests with the number of responses it has seen for that path,
+// inclusive of the request itself (i.e., starting at 1).
 type server struct {
 	sync.Mutex
 	counters map[string]int

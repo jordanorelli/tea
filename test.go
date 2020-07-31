@@ -33,12 +33,14 @@ func (f failure) Run(t *testing.T) {
 	t.Error(f.cause.Error())
 }
 
-// empty is an empty test. It does nothing when run, it's just used as a
-// sentinel value to create notes in the test graph and for ... testing the tea
-// package itself.
-type empty struct{}
+// Pass is a Test value that always passes.
+const Pass = Passing("test passed")
 
-func (e empty) Run(t *testing.T) {}
+// Passing is a Test type that always passes. Every value of the Passing type,
+// including the zero value, is a test that will always pass.
+type Passing string
+
+func (p Passing) Run(t *testing.T) {}
 
 // parseName parses the name for a given test
 func parseName(test Test) string {

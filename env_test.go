@@ -6,7 +6,7 @@ import (
 
 func TestSave(t *testing.T) {
 	t.Run("empty begets nil", func(t *testing.T) {
-		e := mkenv(new(empty))
+		e := mkenv(Pass)
 		if e != nil {
 			t.Errorf("saw unexpected env value looking for nil: %v", e)
 		}
@@ -14,7 +14,7 @@ func TestSave(t *testing.T) {
 
 	t.Run("unexported fields are ignored", func(t *testing.T) {
 		type test struct {
-			empty
+			Passing
 			foo int `tea:"save"`
 		}
 
@@ -25,7 +25,7 @@ func TestSave(t *testing.T) {
 
 	t.Run("create an env from a test", func(t *testing.T) {
 		test := struct {
-			empty
+			Passing
 			Foo int `tea:"save"`
 		}{
 			Foo: 5,
@@ -48,7 +48,7 @@ func TestSave(t *testing.T) {
 
 	t.Run("update an existing env", func(t *testing.T) {
 		test := struct {
-			empty
+			Passing
 			Foo int `tea:"save"`
 		}{
 			Foo: 5,
@@ -77,7 +77,7 @@ func TestLoad(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Foo int `tea:"load"`
 		}
 
@@ -95,7 +95,7 @@ func TestLoad(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Foo int `tea:"load"`
 		}
 
@@ -110,7 +110,7 @@ func TestLoad(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Foo int `tea:"load"`
 		}
 		test.Foo = 5
@@ -131,7 +131,7 @@ func TestMatch(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Name string `tea:"match"`
 			Foo  int    `tea:"load"`
 		}
@@ -150,7 +150,7 @@ func TestMatch(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Name string `tea:"match"`
 			Foo  int    `tea:"load"`
 		}
@@ -170,7 +170,7 @@ func TestMatch(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Name string `tea:"match"`
 			Foo  int    `tea:"load"`
 		}
@@ -199,7 +199,7 @@ func TestMatch(t *testing.T) {
 		}
 
 		var test struct {
-			empty
+			Passing
 			Name string `tea:"match"`
 			Foo  int    `tea:"load"`
 		}

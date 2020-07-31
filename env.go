@@ -25,6 +25,10 @@ func (e *env) save(test Test) *env {
 	}
 	T := V.Type()
 
+	if T.Kind() != reflect.Struct {
+		return e
+	}
+
 	saved := make(map[string]interface{})
 	for i := 0; i < T.NumField(); i++ {
 		f := T.Field(i)
