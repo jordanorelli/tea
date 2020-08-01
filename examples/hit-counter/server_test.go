@@ -59,7 +59,7 @@ func TestServer(t *testing.T) {
 		return node
 	}
 
-	runParallel := func(node *tea.Tree, tests list) {
+	runSiblings := func(node *tea.Tree, tests list) {
 		for i := 0; i < len(tests); i++ {
 			node.Child(&tests[i])
 		}
@@ -82,7 +82,7 @@ func TestServer(t *testing.T) {
 		{path: "/users/bob", expect: 2},
 	})
 
-	runParallel(root, list{
+	runSiblings(root, list{
 		{path: "/users/alice", expect: 1},
 		{path: "/users/alice", expect: 1},
 		{path: "/users/alice", expect: 1},
