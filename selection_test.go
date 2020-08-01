@@ -9,56 +9,31 @@ type selectionTest struct {
 	selection Selection
 	lnodes    []string
 	xnodes    []string
+	xleaves   []string
 }
 
 func (test *selectionTest) Run(t *testing.T) {
-	lfound := make(map[string]bool)
+	LWanted := wantStrings("selected lnode names", test.lnodes...)
 	for _, L := range test.selection.nodes {
-		if len(L.parents) > 0 {
-			pnames := make([]string, 0, len(L.parents))
-			for _, p := range L.parents {
-				pnames = append(pnames, p.name)
-			}
-			t.Logf("found lnode with label %s having %d parents: %s", L.name, len(L.parents), pnames)
-		} else {
-			t.Logf("found root lnode with label %s", L.name)
-		}
-		lfound[L.name] = true
+		LWanted.add(L.name)
 	}
+	LWanted.report(t)
 
-	for _, expected := range test.lnodes {
-		if lfound[expected] {
-			delete(lfound, expected)
-		} else {
-			t.Errorf("missing expected lnode with label %s", expected)
-		}
+	XWanted := wantStrings("selected xnode labels", test.xnodes...)
+	for _, X := range test.selection.xnodes() {
+		XWanted.add(X.label())
 	}
+	XWanted.report(t)
 
-	for label, _ := range lfound {
-		t.Errorf("found unexpected lnode with label %s", label)
-	}
+	// XLeavesWanted := wantStrings("leaf xnode labels", test.xleaves...)
+	// for _, X := range test.selection.xnodes() {
+	// 	leaves := X.leaves()
+	// 	for _, leaf := range leaves {
+	// 		XLeavesWanted.
 
-	xfound := make(map[string]bool)
-	for _, x := range test.selection.xnodes() {
-		if x.parent != nil {
-			t.Logf("found xnode with label %s having parent %s", x.label(), x.parent.label())
-		} else {
-			t.Logf("found root xnode with label %s", x.label())
-		}
-		xfound[x.label()] = true
-	}
+	// 	}
 
-	for _, expected := range test.xnodes {
-		if xfound[expected] {
-			delete(xfound, expected)
-		} else {
-			t.Errorf("missing expected xnode with label %s", expected)
-		}
-	}
-
-	for label, _ := range xfound {
-		t.Errorf("found unexpected xnode with label %s", label)
-	}
+	// }
 }
 
 func TestSelections(t *testing.T) {
@@ -142,6 +117,20 @@ func TestSelections(t *testing.T) {
 			selection: d.Child(E),
 			lnodes:    []string{"E"},
 			xnodes:    []string{"E.0.D", "E.1.D"},
+		}
+	})
+
+	add(func() selectionTest {
+		root := NewSelection(A)
+		b := root.Child(B)
+		c := root.Child(C)
+		d := b.And(c).Child(D)
+		d.Child(E)
+		return selectionTest{
+			label:     "the root of a complex graph",
+			selection: root,
+			lnodes:    []string{"A"},
+			xnodes:    []string{"A.0"},
 		}
 	})
 

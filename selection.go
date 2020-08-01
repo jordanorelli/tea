@@ -47,3 +47,27 @@ func (s Selection) countXNodes() int {
 	}
 	return total
 }
+
+// xleaves looks at all of the selected xnodes, and for every selected xnode,
+// traverses the x graph until we arrive at the set of all leaf nodes that have
+// a selected ancestor. If the selection consists of the root node, the xleaves
+// are all of the leaves of the x graph.
+func (s *Selection) xleaves() []*xnode {
+	// honestly think that by definition every xnode in the selection has a
+	// non-overlapping set of leaves but thinking about this shit is extremely
+	// starting to hurt my brain so I'm going to write this in a way that's
+	// maybe very redundant.
+
+	seen := make(map[string]bool)
+	var leaves []*xnode
+	for _, x := range s.xnodes() {
+		for _, leaf := range x.leaves() {
+			if seen[leaf.label()] {
+				panic("double-counting leaves somehow")
+			}
+			seen[leaf.label()] = true
+			leaves = append(leaves, leaf)
+		}
+	}
+	return leaves
+}

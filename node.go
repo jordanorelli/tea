@@ -37,6 +37,7 @@ func newLNode(test Test, sel Selection) *lnode {
 		test:    test,
 		parents: make([]*lnode, len(sel.nodes)),
 	}
+	// not sure if this copy is necessary
 	copy(node.parents, sel.nodes)
 
 	xID := 0
@@ -86,6 +87,9 @@ func (x *xnode) isOnlyTestInLNode() bool {
 	return len(x.lnode.xnodes) == 1
 }
 
+// label must be unique or some other shit will break, I'm using this as a way
+// to globally identify xnodes, which may be very flawed and maybe I should
+// have an actual global ID system.
 func (x *xnode) label() string {
 	if x.parent == nil {
 		switch {
@@ -113,7 +117,8 @@ func (x *xnode) label() string {
 }
 
 // ancestry gives a slice of xnodes beginning at the root of the x graph and
-// terminating at the receiver xnode.
+// terminating at the receiver xnode. The ancestry list of a leaf node in the x
+// graph is a single chain of tests.
 func (x *xnode) ancestry() []*xnode {
 	if x.parent == nil {
 		return []*xnode{x}
@@ -134,4 +139,20 @@ func (x *xnode) descendents() []*xnode {
 		descendents = append(descendents, c.descendents()...)
 	}
 	return descendents
+}
+
+// leaves descends the x graph from the receiver xnode, returning a slice
+// containing all of the leaves of the x graph having the receiver x as an
+// ancestor.
+func (x *xnode) leaves() []*xnode {
+	if len(x.children) == 0 {
+		return []*xnode{x}
+	}
+
+	var leaves []*xnode
+	for _, child := range x.children {
+		leaves = append(leaves, child.leaves()...)
+	}
+
+	return leaves
 }
