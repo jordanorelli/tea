@@ -18,9 +18,13 @@ type Test interface {
 // like, kinda on you though, I can't really enforce things that the Go type
 // system doesn't let me enforce.
 func clone(t Test) Test {
-	srcV := reflect.ValueOf(t).Elem()
-	destV := reflect.New(srcV.Type())
-	destV.Elem().Set(srcV)
+	v := reflect.ValueOf(t)
+	switch v.Kind() {
+	case reflect.Ptr:
+		v = v.Elem()
+	}
+	destV := reflect.New(v.Type())
+	destV.Elem().Set(v)
 	return destV.Interface().(Test)
 }
 
