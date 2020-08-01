@@ -1,7 +1,8 @@
 package tea
 
 func NewSelection(test Test) Selection {
-	return Selection{nodes: []*lnode{newLNode(test)}}
+	node := newLNode(test, Selection{})
+	return Selection{nodes: []*lnode{node}}
 }
 
 // Selection represents a set of nodes in our graph.
@@ -10,7 +11,7 @@ type Selection struct {
 }
 
 func (s Selection) Child(test Test) Selection {
-	node := newLNode(test, s.nodes...)
+	node := newLNode(test, s)
 	return Selection{nodes: []*lnode{node}}
 }
 
@@ -32,8 +33,8 @@ func (s Selection) And(other Selection) Selection {
 func (s Selection) xnodes() []*xnode {
 	xnodes := make([]*xnode, 0, s.countXNodes())
 	for _, L := range s.nodes {
-		for _, x := range L.xnodes {
-			xnodes = append(xnodes, &x)
+		for i, _ := range L.xnodes {
+			xnodes = append(xnodes, &L.xnodes[i])
 		}
 	}
 	return xnodes
@@ -46,18 +47,3 @@ func (s Selection) countXNodes() int {
 	}
 	return total
 }
-
-// func (s Selection) writeXDOT(w io.Writer) {
-// 	xnodes := s.xnodes()
-//
-// 	type xedge [2]string
-// 	included := make(map[xedge]bool)
-// 	edges := make([]xedge, 0, len(xnodes))
-//
-// 	for _, X := range xnodes {
-//
-// 		for p := X; p != nil; p = p.parent {
-//
-// 		}
-// 	}
-// }

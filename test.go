@@ -57,6 +57,7 @@ const Pass = Passing("test passed")
 type Passing string
 
 func (p Passing) Run(t *testing.T) {}
+func (p Passing) String() string   { return string(p) }
 
 // parseName parses the name for a given test
 func parseName(test Test) string {

@@ -26,38 +26,41 @@ type lnode struct {
 // If there are no parents, the lnode is a root node, and the provided test is
 // run once. Otherwise, the provided test is used to create xnodes that are
 // children of all of the provided parent nodes' xnodes.
-func newLNode(test Test, parents ...*lnode) *lnode {
-	if len(parents) == 0 {
+func newLNode(test Test, sel Selection) *lnode {
+	if len(sel.nodes) == 0 {
 		return rootLNode(test)
 	}
 
-	id := nextNodeID()
 	node := lnode{
-		id:      id,
+		id:      nextNodeID(),
 		name:    parseName(test),
 		test:    test,
-		parents: parents,
+		parents: make([]*lnode, len(sel.nodes)),
 	}
+	copy(node.parents, sel.nodes)
 
 	xID := 0
-	for _, parent := range parents {
+	for _, parent := range node.parents {
+		parent.children = append(parent.children, &node)
 		for i, _ := range parent.xnodes {
-			node.xnodes = append(node.xnodes, xnode{
+			x := xnode{
 				id:     xID,
 				lnode:  &node,
 				parent: &parent.xnodes[i],
-			})
+			}
+			node.xnodes = append(node.xnodes, x)
 			xID++
 		}
 	}
 
-	for i, _ := range node.xnodes {
-		xparent := node.xnodes[i]
-		xparent.children = append(xparent.children, &node.xnodes[i])
+	for i, x := range node.xnodes {
+		x.parent.children = append(x.parent.children, &node.xnodes[i])
 	}
 	return &node
 }
 
+// rootLNode creates a root lnode. This case is a lot simpler so I split it out
+// to keep newLNode a little more readable.
 func rootLNode(test Test) *lnode {
 	id := nextNodeID()
 	node := lnode{
@@ -67,21 +70,6 @@ func rootLNode(test Test) *lnode {
 	}
 	node.xnodes = []xnode{{id: 0, lnode: &node}}
 	return &node
-}
-
-// child adds an lnode as a child of the receiver. For every xnode in this
-// receiver, the child lnode has a component xnode whose parent is the
-// corresponding xnode in this lnode.
-func (l *lnode) child(c *lnode, t Test) {
-	panic("nuh")
-	//c.parents = append(c.parents, l)
-	//l.children = append(l.children, c)
-	//for i, x := range l.xnodes {
-	//	xchild := x.child(t)
-	//	xchild.lnode = c
-	//	xchild.id = i
-	//	c.xnodes = append(c.xnodes, xchild)
-	//}
 }
 
 // xnode is a node in the execution graph, representing one instance of a test
@@ -94,32 +82,33 @@ type xnode struct {
 	children []*xnode
 }
 
-// func newXNode(L *lnode
-
-func (x *xnode) child(t Test) *xnode {
-	panic("no")
-	// child := &xnode{test: t, parent: x}
-	// x.children = append(x.children, child)
-	// return child
-}
-
 func (x *xnode) isOnlyTestInLNode() bool {
-	return len(x.lnode.children) == 1
+	return len(x.lnode.xnodes) == 1
 }
 
 func (x *xnode) label() string {
-	if x.isOnlyTestInLNode() {
-		return x.lnode.name
-	}
-	switch {
-	case len(x.lnode.children) < 10:
-		return fmt.Sprintf("%s:%d", x.lnode.name, x.id)
-	case len(x.lnode.children) < 100:
-		return fmt.Sprintf("%s:%02d", x.lnode.name, x.id)
-	case len(x.lnode.children) < 1000:
-		return fmt.Sprintf("%s:%03d", x.lnode.name, x.id)
-	default:
-		return fmt.Sprintf("%s:%04d", x.lnode.name, x.id)
+	if x.parent == nil {
+		switch {
+		case len(x.lnode.children) < 10:
+			return fmt.Sprintf("%s.%d", x.lnode.name, x.id)
+		case len(x.lnode.children) < 100:
+			return fmt.Sprintf("%s.%02d", x.lnode.name, x.id)
+		case len(x.lnode.children) < 1000:
+			return fmt.Sprintf("%s.%03d", x.lnode.name, x.id)
+		default:
+			return fmt.Sprintf("%s.%04d", x.lnode.name, x.id)
+		}
+	} else {
+		switch {
+		case len(x.lnode.children) < 10:
+			return fmt.Sprintf("%s.%d.%s", x.lnode.name, x.id, x.parent.lnode.name)
+		case len(x.lnode.children) < 100:
+			return fmt.Sprintf("%s.%02d.%s", x.lnode.name, x.id, x.parent.lnode.name)
+		case len(x.lnode.children) < 1000:
+			return fmt.Sprintf("%s.%03d.%s", x.lnode.name, x.id, x.parent.lnode.name)
+		default:
+			return fmt.Sprintf("%s.%04d.%s", x.lnode.name, x.id, x.parent.lnode.name)
+		}
 	}
 }
 
