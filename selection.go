@@ -1,23 +1,7 @@
 package tea
 
-import (
-	"io"
-)
-
 func NewSelection(test Test) Selection {
-	x := xnode{
-		test: clone(test),
-	}
-	l := lnode{
-		id:     nextNodeID(),
-		name:   parseName(test),
-		xnodes: []*xnode{&x},
-	}
-	x.lnode = &l
-
-	return Selection{
-		nodes: []*lnode{&l},
-	}
+	return Selection{nodes: []*lnode{newLNode(test)}}
 }
 
 // Selection represents a set of nodes in our graph.
@@ -26,11 +10,8 @@ type Selection struct {
 }
 
 func (s Selection) Child(test Test) Selection {
-	child := &lnode{id: nextNodeID(), name: parseName(test)}
-	for _, l := range s.nodes {
-		l.child(child, test)
-	}
-	return Selection{nodes: []*lnode{child}}
+	node := newLNode(test, s.nodes...)
+	return Selection{nodes: []*lnode{node}}
 }
 
 func (s Selection) And(other Selection) Selection {
@@ -47,6 +28,17 @@ func (s Selection) And(other Selection) Selection {
 	return Selection{nodes: out}
 }
 
+// xnodes represents all xnodes in the selected lnodes
+func (s Selection) xnodes() []*xnode {
+	xnodes := make([]*xnode, 0, s.countXNodes())
+	for _, L := range s.nodes {
+		for _, x := range L.xnodes {
+			xnodes = append(xnodes, &x)
+		}
+	}
+	return xnodes
+}
+
 func (s Selection) countXNodes() int {
 	total := 0
 	for _, child := range s.nodes {
@@ -55,6 +47,17 @@ func (s Selection) countXNodes() int {
 	return total
 }
 
-func (s Selection) writeDOT(w io.Writer) {
-
-}
+// func (s Selection) writeXDOT(w io.Writer) {
+// 	xnodes := s.xnodes()
+//
+// 	type xedge [2]string
+// 	included := make(map[xedge]bool)
+// 	edges := make([]xedge, 0, len(xnodes))
+//
+// 	for _, X := range xnodes {
+//
+// 		for p := X; p != nil; p = p.parent {
+//
+// 		}
+// 	}
+// }

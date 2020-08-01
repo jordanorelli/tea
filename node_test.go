@@ -4,6 +4,5 @@ import (
 	"testing"
 )
 
-func TestXNodeDot(t *testing.T) {
-
+func TestXLabels(t *testing.T) {
 }
