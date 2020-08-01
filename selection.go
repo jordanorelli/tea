@@ -1,5 +1,9 @@
 package tea
 
+import (
+	"io"
+)
+
 func NewSelection(test Test) Selection {
 	x := xnode{
 		test: clone(test),
@@ -41,4 +45,16 @@ func (s Selection) And(other Selection) Selection {
 	}
 
 	return Selection{nodes: out}
+}
+
+func (s Selection) countXNodes() int {
+	total := 0
+	for _, child := range s.nodes {
+		total += len(child.xnodes)
+	}
+	return total
+}
+
+func (s Selection) writeDOT(w io.Writer) {
+
 }

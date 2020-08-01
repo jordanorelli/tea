@@ -20,14 +20,15 @@ type lnode struct {
 }
 
 // child adds an lnode as a child of the receiver. For every xnode in this
-// lnode, the child lnode has a component xnode whose parent is the
+// receiver, the child lnode has a component xnode whose parent is the
 // corresponding xnode in this lnode.
 func (l *lnode) child(c *lnode, t Test) {
 	c.parents = append(c.parents, l)
 	l.children = append(l.children, c)
-	for _, x := range l.xnodes {
+	for i, x := range l.xnodes {
 		xchild := x.child(t)
 		xchild.lnode = c
+		xchild.id = [2]int{l.id, i + 1}
 		c.xnodes = append(c.xnodes, xchild)
 	}
 }
@@ -36,6 +37,7 @@ func (l *lnode) child(c *lnode, t Test) {
 // to be executed. xnode is the unit test in tea. every xnode is either
 // unparented or has one parent.
 type xnode struct {
+	id       [2]int
 	lnode    *lnode
 	test     Test
 	parent   *xnode
