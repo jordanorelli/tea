@@ -25,15 +25,14 @@ func (test *selectionTest) Run(t *testing.T) {
 	}
 	XWanted.report(t)
 
-	// XLeavesWanted := wantStrings("leaf xnode labels", test.xleaves...)
-	// for _, X := range test.selection.xnodes() {
-	// 	leaves := X.leaves()
-	// 	for _, leaf := range leaves {
-	// 		XLeavesWanted.
-
-	// 	}
-
-	// }
+	XLeavesWanted := wantStrings("leaf xnode labels", test.xleaves...)
+	for _, X := range test.selection.xnodes() {
+		leaves := X.leaves()
+		for _, leaf := range leaves {
+			XLeavesWanted.add(leaf.label())
+		}
+	}
+	XLeavesWanted.report(t)
 }
 
 func TestSelections(t *testing.T) {
@@ -43,18 +42,21 @@ func TestSelections(t *testing.T) {
 			selection: NewSelection(A),
 			lnodes:    []string{"A"},
 			xnodes:    []string{"A.0"},
+			xleaves:   []string{"A.0"},
 		},
 		{
 			label:     "root with one child",
 			selection: NewSelection(A).Child(B),
 			lnodes:    []string{"B"},
 			xnodes:    []string{"B.0.A"},
+			xleaves:   []string{"B.0.A"},
 		},
 		{
 			label:     "two selected roots",
 			selection: NewSelection(A).And(NewSelection(B)),
 			lnodes:    []string{"A", "B"},
 			xnodes:    []string{"A.0", "B.0"},
+			xleaves:   []string{"A.0", "B.0"},
 		},
 	}
 
@@ -68,6 +70,7 @@ func TestSelections(t *testing.T) {
 			selection: root.And(b),
 			lnodes:    []string{"A", "B"},
 			xnodes:    []string{"A.0", "B.0.A"},
+			xleaves:   []string{"B.0.A"},
 		}
 	})
 
@@ -79,6 +82,7 @@ func TestSelections(t *testing.T) {
 			selection: root.And(b).Child(C),
 			lnodes:    []string{"C"},
 			xnodes:    []string{"C.0.A", "C.1.B"},
+			xleaves:   []string{"C.0.A", "C.1.B"},
 		}
 	})
 
@@ -92,6 +96,7 @@ func TestSelections(t *testing.T) {
 			selection: b.And(c),
 			lnodes:    []string{"B", "C"},
 			xnodes:    []string{"B.0.A", "C.0.A"},
+			xleaves:   []string{"B.0.A", "C.0.A"},
 		}
 	})
 
@@ -104,6 +109,7 @@ func TestSelections(t *testing.T) {
 			selection: b.And(c).Child(D),
 			lnodes:    []string{"D"},
 			xnodes:    []string{"D.0.B", "D.1.C"},
+			xleaves:   []string{"D.0.B", "D.1.C"},
 		}
 	})
 
@@ -117,6 +123,7 @@ func TestSelections(t *testing.T) {
 			selection: d.Child(E),
 			lnodes:    []string{"E"},
 			xnodes:    []string{"E.0.D", "E.1.D"},
+			xleaves:   []string{"E.0.D", "E.1.D"},
 		}
 	})
 
@@ -131,6 +138,53 @@ func TestSelections(t *testing.T) {
 			selection: root,
 			lnodes:    []string{"A"},
 			xnodes:    []string{"A.0"},
+			xleaves:   []string{"E.0.D", "E.1.D"},
+		}
+	})
+
+	//         A
+	//        / \
+	//       /   \
+	//      B     C
+	//     / \   / \
+	//    /   \ /   \
+	//   D     E     F
+	//        / \   / \
+	//       /   \ /   \
+	//      G     H     I
+	//      |     |     |
+	//      |     |     |
+	//      J     K     L
+	//      |      \   /
+	//      |       \ /
+	//      M        N
+	//
+	add(func() selectionTest {
+		root := NewSelection(A)
+		b := root.Child(B)
+		c := root.Child(C)
+		b.Child(D)
+		e := b.And(c).Child(E)
+		f := c.Child(F)
+		e.Child(G).Child(J).Child(M)
+		h := e.And(f).Child(H)
+		l := f.Child(I).Child(L)
+		k := h.Child(K)
+		k.And(l).Child(N)
+		return selectionTest{
+			label:     "criss-crossing",
+			selection: root,
+			lnodes:    []string{"A"},
+			xnodes:    []string{"A.0"},
+			xleaves: []string{
+				"D.0.B", // A B D
+				"M.0.J", // A B E G J M
+				"M.1.J", // A C E G J M
+				"N.0.K", // A B E H K N
+				"N.1.K", // A C E H K N
+				"N.2.K", // A C F H K N
+				"N.3.L", // A C F I L N
+			},
 		}
 	})
 
