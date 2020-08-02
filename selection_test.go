@@ -27,8 +27,7 @@ func (test *selectionTest) Run(t *testing.T) {
 
 	XLeavesWanted := wantStrings("leaf xnode labels", test.xleaves...)
 	for _, X := range test.selection.xnodes() {
-		leaves := X.leaves()
-		for _, leaf := range leaves {
+		for _, leaf := range X.leaves() {
 			XLeavesWanted.add(leaf.label())
 		}
 	}
@@ -184,6 +183,32 @@ func TestSelections(t *testing.T) {
 				"N.1.K", // A C E H K N
 				"N.2.K", // A C F H K N
 				"N.3.L", // A C F I L N
+			},
+		}
+	})
+
+	add(func() selectionTest {
+		root := NewSelection(A)
+		b := root.Child(B)
+		c := root.Child(C)
+		b.Child(D)
+		e := b.And(c).Child(E)
+		f := c.Child(F)
+		e.Child(G).Child(J).Child(M)
+		h := e.And(f).Child(H)
+		l := f.Child(I).Child(L)
+		k := h.Child(K)
+		k.And(l).Child(N)
+		return selectionTest{
+			label:     "criss-crossing-partial",
+			selection: e,
+			lnodes:    []string{"E"},
+			xnodes:    []string{"E.0.B", "E.1.C"},
+			xleaves: []string{
+				"M.0.J", // A B E G J M
+				"M.1.J", // A C E G J M
+				"N.0.K", // A B E H K N
+				"N.1.K", // A C E H K N
 			},
 		}
 	})
