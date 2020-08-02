@@ -60,7 +60,7 @@ func (e *env) save(test Test) *env {
 	saved := make(map[string]interface{})
 	for i := 0; i < T.NumField(); i++ {
 		f := T.Field(i)
-		if !isSaveField(f) {
+		if save, _ := isSaveField(f); !save {
 			continue
 		}
 

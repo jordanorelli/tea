@@ -1,6 +1,12 @@
 package tea
 
-import "testing"
+// this is just a collection of ... reusable assertions for the unit tests for
+// tea itself.
+
+import (
+	"errors"
+	"testing"
+)
 
 type labelChecker struct {
 	name   string
@@ -43,6 +49,26 @@ func (l *labelChecker) report(t *testing.T) {
 	for name, _ := range l.wanted {
 		if !l.found[name] {
 			t.Errorf("%s missing expected value %s", l.name, name)
+		}
+	}
+}
+
+func assertError(t *testing.T, fatal bool, err error, target error) {
+	if !errors.Is(err, target) {
+		if fatal {
+			t.Fatalf("expected error to be %s, instead found: %s", target, err)
+		} else {
+			t.Errorf("expected error to be %s, instead found: %s", target, err)
+		}
+	}
+}
+
+func assertNoError(t *testing.T, fatal bool, err error) {
+	if err != nil {
+		if fatal {
+			t.Fatalf("encountered unexpected error: %v", err)
+		} else {
+			t.Fatalf("encountered unexpected error: %v", err)
 		}
 	}
 }

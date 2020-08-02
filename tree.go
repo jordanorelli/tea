@@ -1,6 +1,8 @@
 package tea
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -100,20 +102,61 @@ func (t *Tree) Child(test Test) *Tree {
 	return child
 }
 
+func isExported(f reflect.StructField) bool {
+	// PkgPath is the package path that qualifies a lower case (unexported)
+	// field name. It is empty for upper case (exported) field names.
+	// See https://golang.org/ref/spec#Uniqueness_of_identifiers
+	return f.PkgPath == ""
+}
+
 // isSaveField takes a struct field and checks its tags for a save tag,
 // indicating that the field's value should persist between tests
-func isSaveField(f reflect.StructField) bool {
-	// PkgPath is empty string when the identifier is unexported.
-	if f.PkgPath != "" {
-		return false
+func isSaveField(f reflect.StructField) (bool, error) {
+	if !isExported(f) {
+		return false, errors.New("unexported field cannot be marked as save field")
 	}
+
 	parts := strings.Split(f.Tag.Get("tea"), ",")
 	for _, part := range parts {
 		if part == "save" {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
+}
+
+func getSaveFields(t reflect.Type) ([]reflect.StructField, error) {
+	type fieldError struct {
+		fieldName string
+		err       error
+	}
+	var errs []fieldError
+
+	var fields []reflect.StructField
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		save, err := isSaveField(f)
+		if err != nil {
+			errs = append(errs, fieldError{fieldName: f.Name, err: err})
+			continue
+		}
+		if save {
+			fields = append(fields, f)
+		}
+	}
+
+	switch len(errs) {
+	case 0:
+		return fields, nil
+	case 1:
+		return nil, fmt.Errorf("%w: unable to read save field %s in %s: %v", PlanError, errs[0].fieldName, t.Name(), errs[0].err)
+	default:
+		messages := make([]string, 0, len(errs))
+		for _, fe := range errs {
+			messages = append(messages, fmt.Sprintf("{%s: %v}", fe.fieldName, fe.err))
+		}
+		return nil, fmt.Errorf("%w: save error encountered in %d fields of %s: [%s]", PlanError, len(errs), t.Name(), strings.Join(messages, ", "))
+	}
 }
 
 // isLoadField takes a struct field and checks its tags for a load tag,
